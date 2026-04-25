@@ -127,6 +127,16 @@
 </div>
 </div>
 
+<!-- FILTER -->
+<div class="card">
+<h2>📅 Filter</h2>
+<div class="grid">
+<input type="date" id="fromDate">
+<input type="date" id="toDate">
+<button onclick="update()">Apply Filter</button>
+</div>
+</div>
+
 <div class="card">
 <h2>📊 Summary</h2>
 <div class="summary">
@@ -181,42 +191,42 @@ let guests=[], expenses=[];
 
 window.addGuest = async () => {
   await addDoc(collection(db,"guests"),{
-    name: document.getElementById("name").value,
-    room: document.getElementById("room").value,
-    amt: Number(document.getElementById("amount").value),
-    payment: document.getElementById("payment").value,
-    date: new Date().toLocaleDateString()
+    name: name.value,
+    room: room.value,
+    amt: Number(amount.value),
+    payment: payment.value,
+    date: new Date().toLocaleDateString('en-GB'),
+    rawDate: new Date().toISOString()
   });
+
+  name.value=""; room.value=""; amount.value="";
 };
 
 window.addExpense = async () => {
-  let cat = document.getElementById("category").value==="Other"
-    ? document.getElementById("otherCategory").value
-    : document.getElementById("category").value;
+  let cat = category.value==="Other" ? otherCategory.value : category.value;
 
   await addDoc(collection(db,"expenses"),{
-    amt: Number(document.getElementById("expAmount").value),
+    amt: Number(expAmount.value),
     category: cat,
-    staff: document.getElementById("staffName").value,
-    payment: document.getElementById("expPayment").value,
-    date: new Date().toLocaleDateString()
+    staff: staffName.value,
+    payment: expPayment.value,
+    date: new Date().toLocaleDateString('en-GB'),
+    rawDate: new Date().toISOString()
   });
+
+  expAmount.value=""; staffName.value="";
 };
 
 window.deleteGuest = async (id)=>{
   if(prompt("Enter Password")==PASSWORD){
     await deleteDoc(doc(db,"guests",id));
-  } else {
-    alert("Wrong Password");
-  }
+  } else alert("Wrong Password");
 };
 
 window.deleteExpense = async (id)=>{
   if(prompt("Enter Password")==PASSWORD){
     await deleteDoc(doc(db,"expenses",id));
-  } else {
-    alert("Wrong Password");
-  }
+  } else alert("Wrong Password");
 };
 
 onSnapshot(collection(db,"guests"),s=>{
@@ -228,15 +238,28 @@ onSnapshot(collection(db,"expenses"),s=>{
 
 function update(){
 
-  let ti=guests.reduce((s,g)=>s+g.amt,0);
-  let te=expenses.reduce((s,e)=>s+e.amt,0);
+  let from = fromDate.value;
+  let to = toDate.value;
 
-  let ci=guests.filter(g=>g.payment=="Cash").reduce((s,g)=>s+g.amt,0);
-  let gi=guests.filter(g=>g.payment=="GPay").reduce((s,g)=>s+g.amt,0);
-  let ti2=guests.filter(g=>g.payment=="Treebo").reduce((s,g)=>s+g.amt,0);
+  let fg = guests.filter(g=>{
+    let d = new Date(g.rawDate);
+    return (!from || new Date(from)<=d) && (!to || new Date(to)>=d);
+  });
 
-  let ce=expenses.filter(e=>e.payment=="Cash").reduce((s,e)=>s+e.amt,0);
-  let ge=expenses.filter(e=>e.payment=="GPay").reduce((s,e)=>s+e.amt,0);
+  let fe = expenses.filter(e=>{
+    let d = new Date(e.rawDate);
+    return (!from || new Date(from)<=d) && (!to || new Date(to)>=d);
+  });
+
+  let ti=fg.reduce((s,g)=>s+g.amt,0);
+  let te=fe.reduce((s,e)=>s+e.amt,0);
+
+  let ci=fg.filter(g=>g.payment=="Cash").reduce((s,g)=>s+g.amt,0);
+  let gi=fg.filter(g=>g.payment=="GPay").reduce((s,g)=>s+g.amt,0);
+  let ti2=fg.filter(g=>g.payment=="Treebo").reduce((s,g)=>s+g.amt,0);
+
+  let ce=fe.filter(e=>e.payment=="Cash").reduce((s,e)=>s+e.amt,0);
+  let ge=fe.filter(e=>e.payment=="GPay").reduce((s,e)=>s+e.amt,0);
 
   income.innerHTML = "Total Income <span>₹"+ti+"</span>";
   expense.innerHTML = "Total Expense <span>₹"+te+"</span>";
@@ -245,14 +268,14 @@ function update(){
   gpayBalance.innerHTML = "GPay Balance <span>₹"+(gi-ge)+"</span>";
   treeboIncome.innerHTML = "Treebo Income <span>₹"+ti2+"</span>";
 
-  guestTable.innerHTML=guests.map(g=>`
+  guestTable.innerHTML=fg.map(g=>`
   <tr>
   <td>${g.date}</td><td>${g.name}</td><td>${g.room}</td>
   <td>₹${g.amt}</td><td>${g.payment}</td>
   <td><button class="danger" onclick="deleteGuest('${g.id}')">X</button></td>
   </tr>`).join("");
 
-  expenseTable.innerHTML=expenses.map(e=>`
+  expenseTable.innerHTML=fe.map(e=>`
   <tr>
   <td>${e.date}</td><td>${e.category}</td><td>${e.staff||"-"}</td>
   <td>₹${e.amt}</td><td>${e.payment}</td>
