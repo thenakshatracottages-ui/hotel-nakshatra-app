@@ -127,13 +127,12 @@
 </div>
 </div>
 
-<!-- FILTER -->
+<!-- DATE FILTER -->
 <div class="card">
-<h2>📅 Filter</h2>
+<h2>📅 Date Filter</h2>
 <div class="grid">
-<input type="date" id="fromDate">
-<input type="date" id="toDate">
-<button onclick="update()">Apply Filter</button>
+<input type="date" id="fromDate" onchange="filterTables()">
+<input type="date" id="toDate" onchange="filterTables()">
 </div>
 </div>
 
@@ -230,43 +229,49 @@ window.deleteExpense = async (id)=>{
 };
 
 onSnapshot(collection(db,"guests"),s=>{
-  guests=[]; s.forEach(d=>guests.push({id:d.id,...d.data()})); update();
-});
-onSnapshot(collection(db,"expenses"),s=>{
-  expenses=[]; s.forEach(d=>expenses.push({id:d.id,...d.data()})); update();
+  guests=[]; s.forEach(d=>guests.push({id:d.id,...d.data()}));
+  updateTables(); // normal load
 });
 
-function update(){
+onSnapshot(collection(db,"expenses"),s=>{
+  expenses=[]; s.forEach(d=>expenses.push({id:d.id,...d.data()}));
+  updateTables();
+});
+
+function updateTables(){
+  guestTable.innerHTML=guests.map(g=>`
+  <tr>
+  <td>${g.date}</td><td>${g.name}</td><td>${g.room}</td>
+  <td>₹${g.amt}</td><td>${g.payment}</td>
+  <td><button class="danger" onclick="deleteGuest('${g.id}')">X</button></td>
+  </tr>`).join("");
+
+  expenseTable.innerHTML=expenses.map(e=>`
+  <tr>
+  <td>${e.date}</td><td>${e.category}</td><td>${e.staff||"-"}</td>
+  <td>₹${e.amt}</td><td>${e.payment}</td>
+  <td><button class="danger" onclick="deleteExpense('${e.id}')">X</button></td>
+  </tr>`).join("");
+}
+
+function filterTables(){
 
   let from = fromDate.value;
   let to = toDate.value;
 
   let fg = guests.filter(g=>{
-    let d = new Date(g.rawDate);
+    let d = g.rawDate 
+      ? new Date(g.rawDate) 
+      : new Date(g.date.split("/").reverse().join("-"));
     return (!from || new Date(from)<=d) && (!to || new Date(to)>=d);
   });
 
   let fe = expenses.filter(e=>{
-    let d = new Date(e.rawDate);
+    let d = e.rawDate 
+      ? new Date(e.rawDate) 
+      : new Date(e.date.split("/").reverse().join("-"));
     return (!from || new Date(from)<=d) && (!to || new Date(to)>=d);
   });
-
-  let ti=fg.reduce((s,g)=>s+g.amt,0);
-  let te=fe.reduce((s,e)=>s+e.amt,0);
-
-  let ci=fg.filter(g=>g.payment=="Cash").reduce((s,g)=>s+g.amt,0);
-  let gi=fg.filter(g=>g.payment=="GPay").reduce((s,g)=>s+g.amt,0);
-  let ti2=fg.filter(g=>g.payment=="Treebo").reduce((s,g)=>s+g.amt,0);
-
-  let ce=fe.filter(e=>e.payment=="Cash").reduce((s,e)=>s+e.amt,0);
-  let ge=fe.filter(e=>e.payment=="GPay").reduce((s,e)=>s+e.amt,0);
-
-  income.innerHTML = "Total Income <span>₹"+ti+"</span>";
-  expense.innerHTML = "Total Expense <span>₹"+te+"</span>";
-  profit.innerHTML = "Profit <span>₹"+(ti-te)+"</span>";
-  cashBalance.innerHTML = "Cash Balance <span>₹"+(ci-ce)+"</span>";
-  gpayBalance.innerHTML = "GPay Balance <span>₹"+(gi-ge)+"</span>";
-  treeboIncome.innerHTML = "Treebo Income <span>₹"+ti2+"</span>";
 
   guestTable.innerHTML=fg.map(g=>`
   <tr>
