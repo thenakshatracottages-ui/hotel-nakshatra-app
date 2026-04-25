@@ -5,54 +5,137 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <style>
-    body { font-family: Arial; background:#f4f6f9; padding:10px; }
-    .card { background:#fff; padding:15px; margin-bottom:15px; border-radius:10px; }
-    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px; }
-    input,select,button { padding:10px; border-radius:8px; border:1px solid #ccc; }
-    button { background:#007bff; color:#fff; border:none; }
-    .danger { background:red; }
-    table { width:100%; border-collapse:collapse; margin-top:10px; }
-    th,td { padding:8px; border:1px solid #ddd; text-align:center; }
-    th { background:#007bff; color:#fff; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #eef2f7;
+      margin: 0;
+      padding: 10px;
+    }
+
+    .container { max-width: 1200px; margin: auto; }
+
+    .card {
+      background: white;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    h2 { margin-top: 0; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px,1fr));
+      gap: 10px;
+    }
+
+    input, select {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      width: 100%;
+    }
+
+    button {
+      padding: 8px;
+      border: none;
+      border-radius: 8px;
+      background: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+
+    .danger { background: red; }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px,1fr));
+      gap: 10px;
+    }
+
+    .box {
+      background: #007bff;
+      color: white;
+      padding: 12px;
+      border-radius: 10px;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .box span {
+      display: block;
+      font-size: 18px;
+      margin-top: 5px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      background: white;
+    }
+
+    th, td {
+      padding: 8px;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+
+    th {
+      background: #007bff;
+      color: white;
+    }
   </style>
 </head>
 
 <body>
 
+<div class="container">
+
 <div class="card">
 <h2>🏨 Guest Entry</h2>
 <div class="grid">
-<input id="name" placeholder="Name">
-<input id="room" placeholder="Room">
+<input id="name" placeholder="Guest Name">
+<input id="room" placeholder="Room No">
 <input id="amount" placeholder="Amount">
 <select id="payment">
 <option>Cash</option>
 <option>GPay</option>
 <option>Treebo</option>
 </select>
-<button onclick="addGuest()">Add</button>
+<button onclick="addGuest()">Add Guest</button>
 </div>
 </div>
 
 <div class="card">
-<h2>💸 Expense Entry</h2>
+<h2>💰 Expense Entry</h2>
 <div class="grid">
 <input id="expAmount" placeholder="Amount">
-<input id="staff" placeholder="Staff">
-<input id="category" placeholder="Category">
-<select id="expPay">
-<option>Cash</option>
-<option>GPay</option>
+<input id="staffName" placeholder="Staff Name">
+<select id="category">
+<option>Bhaji</option><option>Kirana</option><option>Bisleri</option>
+<option>Marketing</option><option>Laundry</option><option>Tata Sky</option>
+<option>Diesel</option><option>Staff Salary</option>
+<option>Staff Advance</option><option>Other</option>
 </select>
-<button onclick="addExpense()">Add</button>
+<input id="otherCategory" placeholder="Other Expense">
+<select id="expPayment">
+<option>Cash</option><option>GPay</option>
+</select>
+<button onclick="addExpense()">Add Expense</button>
 </div>
 </div>
 
 <div class="card">
-<h2>📅 Date Filter</h2>
-<div class="grid">
-<input type="date" id="from" onchange="filterData()">
-<input type="date" id="to" onchange="filterData()">
+<h2>📊 Summary</h2>
+<div class="summary">
+<div class="box" id="income"></div>
+<div class="box" id="expense"></div>
+<div class="box" id="profit"></div>
+<div class="box" id="cashBalance"></div>
+<div class="box" id="gpayBalance"></div>
+<div class="box" id="treeboIncome"></div>
 </div>
 </div>
 
@@ -60,7 +143,7 @@
 <h2>📋 Guests</h2>
 <table>
 <thead>
-<tr><th>Date</th><th>Name</th><th>Room</th><th>Amount</th><th>Pay</th><th>X</th></tr>
+<tr><th>Date</th><th>Name</th><th>Room</th><th>Amount</th><th>Pay</th><th>Delete</th></tr>
 </thead>
 <tbody id="guestTable"></tbody>
 </table>
@@ -70,16 +153,20 @@
 <h2>💸 Expenses</h2>
 <table>
 <thead>
-<tr><th>Date</th><th>Category</th><th>Staff</th><th>Amount</th><th>Pay</th><th>X</th></tr>
+<tr><th>Date</th><th>Category</th><th>Staff</th><th>Amount</th><th>Pay</th><th>Delete</th></tr>
 </thead>
 <tbody id="expenseTable"></tbody>
 </table>
+</div>
+
 </div>
 
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
 import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js";
+
+const PASSWORD = "prathameshj6018@";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAxdomFMz-J1FlHFnujB2Fwlm-puXP02ok",
@@ -92,90 +179,85 @@ const db = getFirestore(app);
 
 let guests=[], expenses=[];
 
-window.addGuest = async ()=>{
+window.addGuest = async () => {
   await addDoc(collection(db,"guests"),{
-    name:name.value,
-    room:room.value,
-    amt:Number(amount.value),
-    payment:payment.value,
-    date:new Date().toLocaleDateString('en-GB'),
-    raw:new Date().toISOString()
+    name: document.getElementById("name").value,
+    room: document.getElementById("room").value,
+    amt: Number(document.getElementById("amount").value),
+    payment: document.getElementById("payment").value,
+    date: new Date().toLocaleDateString()
   });
 };
 
-window.addExpense = async ()=>{
+window.addExpense = async () => {
+  let cat = document.getElementById("category").value==="Other"
+    ? document.getElementById("otherCategory").value
+    : document.getElementById("category").value;
+
   await addDoc(collection(db,"expenses"),{
-    amt:Number(expAmount.value),
-    category:category.value,
-    staff:staff.value,
-    payment:expPay.value,
-    date:new Date().toLocaleDateString('en-GB'),
-    raw:new Date().toISOString()
+    amt: Number(document.getElementById("expAmount").value),
+    category: cat,
+    staff: document.getElementById("staffName").value,
+    payment: document.getElementById("expPayment").value,
+    date: new Date().toLocaleDateString()
   });
 };
 
-window.deleteGuest = async(id)=>{
-  await deleteDoc(doc(db,"guests",id));
+window.deleteGuest = async (id)=>{
+  if(prompt("Enter Password")==PASSWORD){
+    await deleteDoc(doc(db,"guests",id));
+  } else {
+    alert("Wrong Password");
+  }
 };
 
-window.deleteExpense = async(id)=>{
-  await deleteDoc(doc(db,"expenses",id));
+window.deleteExpense = async (id)=>{
+  if(prompt("Enter Password")==PASSWORD){
+    await deleteDoc(doc(db,"expenses",id));
+  } else {
+    alert("Wrong Password");
+  }
 };
 
-onSnapshot(collection(db,"guests"),snap=>{
-  guests=[]; snap.forEach(d=>guests.push({id:d.id,...d.data()}));
-  showAll();
+onSnapshot(collection(db,"guests"),s=>{
+  guests=[]; s.forEach(d=>guests.push({id:d.id,...d.data()})); update();
+});
+onSnapshot(collection(db,"expenses"),s=>{
+  expenses=[]; s.forEach(d=>expenses.push({id:d.id,...d.data()})); update();
 });
 
-onSnapshot(collection(db,"expenses"),snap=>{
-  expenses=[]; snap.forEach(d=>expenses.push({id:d.id,...d.data()}));
-  showAll();
-});
+function update(){
 
-function showAll(){
-  guestTable.innerHTML = guests.map(g=>rowGuest(g)).join("");
-  expenseTable.innerHTML = expenses.map(e=>rowExp(e)).join("");
-}
+  let ti=guests.reduce((s,g)=>s+g.amt,0);
+  let te=expenses.reduce((s,e)=>s+e.amt,0);
 
-function filterData(){
+  let ci=guests.filter(g=>g.payment=="Cash").reduce((s,g)=>s+g.amt,0);
+  let gi=guests.filter(g=>g.payment=="GPay").reduce((s,g)=>s+g.amt,0);
+  let ti2=guests.filter(g=>g.payment=="Treebo").reduce((s,g)=>s+g.amt,0);
 
-  let f = from.value;
-  let t = to.value;
+  let ce=expenses.filter(e=>e.payment=="Cash").reduce((s,e)=>s+e.amt,0);
+  let ge=expenses.filter(e=>e.payment=="GPay").reduce((s,e)=>s+e.amt,0);
 
-  let fg = guests.filter(g=>{
-    let d = new Date(g.raw || g.date.split("/").reverse().join("-"));
-    return (!f || new Date(f)<=d) && (!t || new Date(t)>=d);
-  });
+  income.innerHTML = "Total Income <span>₹"+ti+"</span>";
+  expense.innerHTML = "Total Expense <span>₹"+te+"</span>";
+  profit.innerHTML = "Profit <span>₹"+(ti-te)+"</span>";
+  cashBalance.innerHTML = "Cash Balance <span>₹"+(ci-ce)+"</span>";
+  gpayBalance.innerHTML = "GPay Balance <span>₹"+(gi-ge)+"</span>";
+  treeboIncome.innerHTML = "Treebo Income <span>₹"+ti2+"</span>";
 
-  let fe = expenses.filter(e=>{
-    let d = new Date(e.raw || e.date.split("/").reverse().join("-"));
-    return (!f || new Date(f)<=d) && (!t || new Date(t)>=d);
-  });
+  guestTable.innerHTML=guests.map(g=>`
+  <tr>
+  <td>${g.date}</td><td>${g.name}</td><td>${g.room}</td>
+  <td>₹${g.amt}</td><td>${g.payment}</td>
+  <td><button class="danger" onclick="deleteGuest('${g.id}')">X</button></td>
+  </tr>`).join("");
 
-  guestTable.innerHTML = fg.map(g=>rowGuest(g)).join("");
-  expenseTable.innerHTML = fe.map(e=>rowExp(e)).join("");
-}
-
-function rowGuest(g){
-return `<tr>
-<td>${g.date}</td>
-<td>${g.name}</td>
-<td>${g.room}</td>
-<td>₹${g.amt}</td>
-<td>${g.payment}</td>
-<td><button class="danger" onclick="deleteGuest('${g.id}')">X</button></td>
-</tr>`;
-}
-
-function rowExp(e){
-return `<tr>
-<td>${e.date}</td>
-<td>${e.category}</td>
-<td>${e.staff||""}</td>
-<td>₹${e.amt}</td>
-<td>${e.payment}</td>
-<td><button class="danger" onclick="deleteExpense('${e.id}')">X</button></td>
-</tr>`;
+  expenseTable.innerHTML=expenses.map(e=>`
+  <tr>
+  <td>${e.date}</td><td>${e.category}</td><td>${e.staff||"-"}</td>
+  <td>₹${e.amt}</td><td>${e.payment}</td>
+  <td><button class="danger" onclick="deleteExpense('${e.id}')">X</button></td>
+  </tr>`).join("");
 }
 
 </script>
